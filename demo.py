@@ -1,5 +1,5 @@
 import yyweb
-from yyweb import HTTP_Response,render
+from yyweb import HTTP_Response, render
 
 
 @yyweb.router('/index')
@@ -8,8 +8,9 @@ def index(request):
 
 @yyweb.router('/login')
 def login(request):
-
-    return HTTP_Response('111111')
+    ls = ['北京', '上海', '武汉', '济南', '青岛']
+    dic = {'name':'wangsha'}
+    return render(request, 'login.html', {'username':'yuyang', 'ls':ls,'dic':dic})
 
 @yyweb.router('/home')
 def home(request):

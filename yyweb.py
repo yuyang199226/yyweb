@@ -3,11 +3,26 @@
 import os
 import re
 import json
+from  jinja2 import Template
 from wsgiref.simple_server import make_server
 from conf import setting, LAST_MIDDLEMARE, md
+from utils.snippets import make_bytes, make_str
 # import conf
 # BASE_DIR = ''
 URL_PATTERNS = []
+
+
+
+def render_function(html,context):
+    if not context:
+        return make_bytes(html)
+    template = Template(html)
+    try:
+        rendered_html = template.render(context)
+        return make_bytes(rendered_html)
+    except Exception as e:
+        raise 'you should pass key word arguments or dict'
+    
 
 class Request(object):
     '''Request 对象
@@ -19,25 +34,27 @@ class Request(object):
         self.cookies = environ.get('HTTP_COOKIE')
         self.query_params = environ.get('QUERY_STRING')
 
-def render(request,template_path):
+def render(request,template_path, context=None):
     '''render a html file
     '''
     if not template_path:
         raise 'must have a tempate path'
 
     try:
-        f = open(template_path, 'rb')
+        f = open(template_path, 'r', encoding='utf-8')
         html_body = f.read()
         f.close()
+        html_body = render_function(html_body, context)
         response = HTTP_Response(html_body, render=True)
         return response
     except FileNotFoundError as e:
 
         html_path = os.path.join('templates', template_path)
         try:
-            f = open(html_path, 'rb')
+            f = open(html_path, 'r', encoding='utf-8')
             html_body = f.read()
             f.close()
+            html_body = render_function(html_body, context)
             response = HTTP_Response(html_body, render=True)
             return response
             
@@ -90,14 +107,14 @@ class Myapp01(object):
             return [response.body]
         else:
             status = '404 not found'
-            headers = [('Content-type', 'text/plain')]
+            headers = [('Content-type', 'text/plain; charset=utf-8')]
             start_response(status, headers)
-            ret = bytes('当前访问的url不存在',encoding='utf-8')
+            ret = bytes('当前访问的url不存在', encoding='utf-8')
             return [ret]
 
         
  ####################  路由   ###################
- 
+
 def router(url):
     def wrapper(func):
         URL_PATTERNS.append((url, func))

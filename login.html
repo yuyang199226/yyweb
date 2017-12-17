@@ -8,6 +8,14 @@
     </head>
     <body>
         <h1>登录</h1>
+        <h1>{{ username }}</h1>
+        {% for i in ls %}
+        {% if i == '北京' %}
+            <h2>老北京酸奶</h2>
+        {%  endif %}
+        {{ i }}
+        {% endfor %}
+        {{ dic.name }}
         <form action="">
                用户名 <input type="text">
                密码 <input type="password">
