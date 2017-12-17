@@ -4,15 +4,11 @@ from yyweb import HTTP_Response,render
 
 @yyweb.router('/index')
 def index(request):
-    print(request.method)
-    a = render(request, 'index.html')
-    print(type(a))
-    print(a.status)
-    return a
+    return render(request, 'index.html')
 
 @yyweb.router('/login')
 def login(request):
-    print(request.path_info)
+
     return HTTP_Response('111111')
 
 @yyweb.router('/home')

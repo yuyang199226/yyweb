@@ -1,6 +1,7 @@
 
 
 import os
+import re
 import json
 from wsgiref.simple_server import make_server
 from conf import setting, LAST_MIDDLEMARE, md
@@ -58,7 +59,7 @@ class HTTP_Response(object):
         self.content_type = content_type
         self.headers = []
         if self.render:
-            self.content_type = 'text/html'
+            self.content_type = 'text/html; charset=utf-8'
         self.headers.append(('Content-type', self.content_type))
 
 
@@ -72,19 +73,31 @@ class Myapp01(object):
     def __call__(self, environ, start_response):
         request = Request(environ)
         url = self.path_info = environ.get('PATH_INFO')
+        url_flag = False
         for i in URL_PATTERNS:
-            if url == i[0]:
-                LAST_MIDDLEMARE.get_response = i[1]
-                response = md(request)
-                # response = i[1](request)
-                status = response.status
-                headers = response.headers
-                start_response(status, headers)
-                return [response.body]
+            if re.search(i[0], url):
+                url_flag = True
+                break    
             else:
                 continue
+        if url_flag:
+            LAST_MIDDLEMARE.get_response = i[1]
+            response = md(request)
+            response = i[1](request)
+            status = response.status
+            headers = response.headers
+            start_response(status, headers)
+            return [response.body]
+        else:
+            status = '404 not found'
+            headers = [('Content-type', 'text/plain')]
+            start_response(status, headers)
+            ret = bytes('当前访问的url不存在',encoding='utf-8')
+            return [ret]
 
+        
  ####################  路由   ###################
+ 
 def router(url):
     def wrapper(func):
         URL_PATTERNS.append((url, func))
