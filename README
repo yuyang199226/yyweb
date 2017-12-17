@@ -1,0 +1,10 @@
+#### 环境  ######
+python 3.6
+django 1.11
+#### 使用   ####
+import  yyweb
+    view 为函数，返回值是HTTP_Response 对象
+    路由加到装饰器yyweb.router(),参数为url
+
+#### 启动服务器   ###
+yyweb.start()
