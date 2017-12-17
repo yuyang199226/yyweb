@@ -3,7 +3,8 @@
 import os
 import json
 from wsgiref.simple_server import make_server
-
+from conf import setting, LAST_MIDDLEMARE, md
+# import conf
 # BASE_DIR = ''
 URL_PATTERNS = []
 
@@ -27,12 +28,11 @@ def render(request,template_path):
         f = open(template_path, 'rb')
         html_body = f.read()
         f.close()
-        response = HTTP_Response(html_body,render=True)
+        response = HTTP_Response(html_body, render=True)
         return response
     except FileNotFoundError as e:
 
         html_path = os.path.join('templates', template_path)
-        print('>>>>>>>>>>>>>>>>>>>',html_path)
         try:
             f = open(html_path, 'rb')
             html_body = f.read()
@@ -45,7 +45,7 @@ def render(request,template_path):
 
 
 class HTTP_Response(object):
-    def __init__(self,content=b'', status='200 OK', content_type='text/plain', render=False, **kwargs):
+    def __init__(self, content=b'', status='200 OK', content_type='text/plain', render=False, **kwargs):
         if isinstance(content, bytes):
             self.body = content
         else:
@@ -74,7 +74,9 @@ class Myapp01(object):
         url = self.path_info = environ.get('PATH_INFO')
         for i in URL_PATTERNS:
             if url == i[0]:
-                response = i[1](request)
+                LAST_MIDDLEMARE.get_response = i[1]
+                response = md(request)
+                # response = i[1](request)
                 status = response.status
                 headers = response.headers
                 start_response(status, headers)
