@@ -8,14 +8,23 @@ def index(request):
 
 @yyweb.router('/login')
 def login(request):
-    ls = ['北京', '上海', '武汉', '济南', '青岛']
-    dic = {'name':'wangsha'}
-    return render(request, 'login.html', {'username':'yuyang', 'ls':ls,'dic':dic})
+    if request.method == 'GET':
+        ls = ['北京', '上海', '武汉', '济南', '青岛']
+        dic = {'name':'wangsha'}
+        return render(request, 'login.html', {'username':'yuyang', 'ls':ls,'dic':dic})
+    elif request.method == 'POST':
+        print(request.form_data)
+        print(request.body)
+        return HTTP_Response('ok')
 
 @yyweb.router('/home')
 def home(request):
     # return HTTP_Response('222222')
-    return render(request, 'blog/home.html')
+    response = render(request, 'blog/home.html')
+    print(request.cookies)
+    response.set_cookie('guy', 'nice')
+    response.set_signed_cookie('auth', 'yuyang', 'asd')
+    return response
 
 if __name__ ==  '__main__':
     yyweb.start()

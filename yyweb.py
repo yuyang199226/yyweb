@@ -1,12 +1,12 @@
-
-
+import bottle
+import urllib
 import os
 import re
 import json
 from  jinja2 import Template
 from wsgiref.simple_server import make_server
 from conf import setting, LAST_MIDDLEMARE, md
-from utils.snippets import make_bytes, make_str
+from utils.snippets import make_bytes, make_str,signed_cookie,handle_cookies,parse_form_data
 # import conf
 # BASE_DIR = ''
 URL_PATTERNS = []
@@ -28,11 +28,35 @@ class Request(object):
     '''Request 对象
     '''
     def __init__(self,environ):
+        self.environ = environ
         # environ_cp = copy.deepcopy(environ)
         self.path_info = environ.get('PATH_INFO')
         self.method = environ.get('REQUEST_METHOD')
-        self.cookies = environ.get('HTTP_COOKIE')
+        self._cookies = environ.get('HTTP_COOKIE')
         self.query_params = environ.get('QUERY_STRING')
+
+        try:
+            request_body_size = int(self.environ.get('CONTENT_LENGTH', 0))
+        except (ValueError):
+            request_body_size = 0
+        request_body = self.environ['wsgi.input'].read(request_body_size)
+        self._body = request_body
+    
+    @property
+    def cookies(self):
+        return handle_cookies(self._cookies)
+    
+    @property
+    def form_data(self):
+        
+        if self.method == 'POST':
+            return parse_form_data(self._body)
+        else:
+            return self._body
+    
+    @property
+    def body(self):
+        return self._body
 
 def render(request,template_path, context=None):
     '''render a html file
@@ -61,8 +85,8 @@ def render(request,template_path, context=None):
         except FileNotFoundError as e:
             raise 'file not found,check the path,be sure your path is correct'
 
-
 class HTTP_Response(object):
+
     def __init__(self, content=b'', status='200 OK', content_type='text/plain', render=False, **kwargs):
         if isinstance(content, bytes):
             self.body = content
@@ -74,19 +98,22 @@ class HTTP_Response(object):
         self.status = status
         self.render = render
         self.content_type = content_type
-        self.headers = []
+        self.headers = {}
+        self._cookies = {}
         if self.render:
             self.content_type = 'text/html; charset=utf-8'
-        self.headers.append(('Content-type', self.content_type))
+        self.headers['Content-type'] =  self.content_type
 
-
-
-
+    def set_cookie(self, key, value, path='/', expires=None):
+        '''设置cookie'''
+        self._cookies[key] = value
+    def set_signed_cookie(self, key, value, salt, path='/', expires=None):
+        self._cookies[key] = signed_cookie(value, salt)
+ 
 
 class Myapp01(object):
     def __init__(self, *args, **kwargs):
         pass 
-
     def __call__(self, environ, start_response):
         request = Request(environ)
         url = self.path_info = environ.get('PATH_INFO')
@@ -100,14 +127,14 @@ class Myapp01(object):
         if url_flag:
             LAST_MIDDLEMARE.get_response = i[1]
             response = md(request)
-            response = i[1](request)
             status = response.status
-            headers = response.headers
+            headers = list(response.headers.items())
             start_response(status, headers)
             return [response.body]
         else:
             status = '404 not found'
             headers = [('Content-type', 'text/plain; charset=utf-8')]
+            
             start_response(status, headers)
             ret = bytes('当前访问的url不存在', encoding='utf-8')
             return [ret]
@@ -120,10 +147,6 @@ def router(url):
         URL_PATTERNS.append((url, func))
         return func
     return wrapper
-
-
-
-
 
 def start(host='127.0.0.1', port=8090):
     '''启动服务器
