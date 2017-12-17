@@ -1,17 +1,20 @@
 import yyweb
-from yyweb import HTTP_Response
+from yyweb import HTTP_Response,render
 
 
 @yyweb.router('/index')
 def index(request):
     print(request.method)
-    return 'hello SB'
+    return render(request,'index.html')
 
 @yyweb.router('/login')
 def login(request):
     print(request.path_info)
-    return HTTP_Response('hello login')
+    return render(request, 'login.html')
 
+@yyweb.router('/home')
+def home(request):
+    return render(request, 'blog/home.html')
 
 if __name__ ==  '__main__':
     yyweb.start()

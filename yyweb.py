@@ -1,9 +1,10 @@
 
 
+import os
 import json
 from wsgiref.simple_server import make_server
 
-
+# BASE_DIR = ''
 URL_PATTERNS = []
 
 class Request(object):
@@ -16,16 +17,50 @@ class Request(object):
         self.cookies = environ.get('HTTP_COOKIE')
         self.query_params = environ.get('QUERY_STRING')
 
+def render(request,template_path):
+    '''render a html file
+    '''
+    if not template_path:
+        raise 'must have a tempate path'
+
+    try:
+        f = open(template_path, 'rb')
+        html_body = f.read()
+        f.close()
+        response = HTTP_Response(html_body,render=True)
+        return response
+    except FileNotFoundError as e:
+
+        html_path = os.path.join('templates', template_path)
+        print('>>>>>>>>>>>>>>>>>>>',html_path)
+        try:
+            f = open(html_path, 'rb')
+            html_body = f.read()
+            f.close()
+            response = HTTP_Response(html_body, render=True)
+            return response
+            
+        except FileNotFoundError as e:
+            raise 'file not found,check the path,be sure your path is correct'
 
 
 class HTTP_Response(object):
-    def __init__(self,content=b''):
+    def __init__(self,content=b'', status='200 OK', content_type='text/plain', render=False, **kwargs):
         if isinstance(content, bytes):
             self.body = content
         else:
             str_content = json.dumps(content)
             b_content = bytes(str_content, encoding='utf-8')
             self.body = b_content
+
+        self.status = status
+        self.render = render
+        self.content_type = content_type
+        self.headers = []
+        if self.render:
+            self.content_type = 'text/html'
+        self.headers.append(('Content-type', self.content_type))
+
 
 
 
@@ -37,12 +72,11 @@ class Myapp01(object):
     def __call__(self, environ, start_response):
         request = Request(environ)
         url = self.path_info = environ.get('PATH_INFO')
-        print(url)
         for i in URL_PATTERNS:
             if url == i[0]:
-                status = '200 OK'
                 response = i[1](request)
-                headers = [('Content-type', 'text/plain')]
+                status = response.status
+                headers = response.headers
                 start_response(status, headers)
                 return [response.body]
             else:
