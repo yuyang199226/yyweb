@@ -2,8 +2,9 @@ import yyweb
 from yyweb import HTTP_Response, render
 
 
-@yyweb.router('/index')
+@yyweb.router(r'/index/(?P<id>\d+)')
 def index(request):
+    print('url>>>>>', request.url_kwargs)
     return render(request, 'index.html')
 
 @yyweb.router('/login')

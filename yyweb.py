@@ -27,13 +27,14 @@ def render_function(html,context):
 class Request(object):
     '''Request 对象
     '''
-    def __init__(self,environ):
+    def __init__(self, environ):
         self.environ = environ
         # environ_cp = copy.deepcopy(environ)
         self.path_info = environ.get('PATH_INFO')
         self.method = environ.get('REQUEST_METHOD')
         self._cookies = environ.get('HTTP_COOKIE')
         self.query_params = environ.get('QUERY_STRING')
+        self.url_kwargs = {}
 
         try:
             request_body_size = int(self.environ.get('CONTENT_LENGTH', 0))
@@ -119,13 +120,16 @@ class Myapp01(object):
         url = self.path_info = environ.get('PATH_INFO')
         url_flag = False
         for i in URL_PATTERNS:
-            if re.search(i[0], url):
+            match_obj = re.search(i[0], url)
+            if match_obj:
                 url_flag = True
                 break    
             else:
                 continue
         if url_flag:
             LAST_MIDDLEMARE.get_response = i[1]
+            if match_obj.groupdict():
+                request.url_kwargs = match_obj.groupdict()
             response = md(request)
             status = response.status
             headers = list(response.headers.items())

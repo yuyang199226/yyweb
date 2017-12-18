@@ -10,4 +10,11 @@ import  yyweb
 #### 启动服务器   ###
 yyweb.start()
 支持render html 
-支持自定义中间件,支持模板语言
+支持自定义中间件
+在settings 的MIDDLEWARE定义自己的中间件,目前只支持process_request, process_response 这两种方法  
+引入jinja2支持模板语言
+支持动态路由，目前只支持re模块的有名分组写法
+for example
+    r'^loadcart\.(?P<format>\w+)$'
+
+url 的参数分装在request 对象的url_kwargs 属性里
