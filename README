@@ -18,3 +18,13 @@ for example
     r'^loadcart\.(?P<format>\w+)$'
 
 url 的参数分装在request 对象的url_kwargs 属性里
+
+
+可以设置cookie,设置过期时间，path,过期时间目前只支持数值，比如设置expire=300,意味着5分钟过后过期。
+
+自定义session,从配置文件可以配置cookie,cache redis,mysql 这几种存储方式
+目前只实现了，cache,基于内存的
+还没有实现redis,
+没有实现设置session的过期时间
+
+DEBUG模式下，如果py文件被修改实现自动重启（未实现）

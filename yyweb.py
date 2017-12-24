@@ -1,8 +1,10 @@
 import bottle
 import urllib
 import os
+import time
 import re
 import json
+from http.cookies import SimpleCookie
 from  jinja2 import Template
 from wsgiref.simple_server import make_server
 from conf import setting, LAST_MIDDLEMARE, md
@@ -100,21 +102,37 @@ class HTTP_Response(object):
         self.render = render
         self.content_type = content_type
         self.headers = {}
-        self._cookies = {}
+        self._cookies = None
         if self.render:
             self.content_type = 'text/html; charset=utf-8'
         self.headers['Content-type'] =  self.content_type
 
-    def set_cookie(self, key, value, path='/', expires=None):
+    def set_cookie(self, key, value, **options):
         '''设置cookie'''
+        if not self._cookies:
+            self._cookies = SimpleCookie()
+        if len(value) > 4096: raise ValueError('Cookie value to long.')
         self._cookies[key] = value
+
+        for k, value in options.items():
+            # if k == 'max_age':
+            #     if isinstance(value, timedelta):
+            #         value = value.seconds + value.days * 24 * 3600
+            if k == 'expires':
+                if isinstance(value, (int, float)):
+                    value = time.time()+value
+                    value = time.gmtime(value)
+                value = time.strftime("%a, %d %b %Y %H:%M:%S GMT", value)
+            self._cookies[key][k.replace('_', '-')] = value
     def set_signed_cookie(self, key, value, salt, path='/', expires=None):
         self._cookies[key] = signed_cookie(value, salt)
  
 
 class Myapp01(object):
+
     def __init__(self, *args, **kwargs):
-        pass 
+        pass
+
     def __call__(self, environ, start_response):
         request = Request(environ)
         url = self.path_info = environ.get('PATH_INFO')
@@ -132,15 +150,23 @@ class Myapp01(object):
                 request.url_kwargs = match_obj.groupdict()
             response = md(request)
             status = response.status
-            headers = list(response.headers.items())
+            headers = [(str(k), str(v)) for k, v in response.headers.items()]
+            # res_cookie = response._cookies.output(header='')
+            for c in response._cookies.values():
+                headers.append((str('Set-Cookie'), str(c.output(header=''))))
+            # headers.append(
+            #     (str('Set-Cookie'), str(res_cookie))
+            # )
             start_response(status, headers)
             return [response.body]
         else:
             status = '404 not found'
             headers = [('Content-type', 'text/plain; charset=utf-8')]
-            
+            if setting.DEBUG == True:
+                ret = make_bytes(json.dumps([t[0] for t in URL_PATTERNS]))
+            else:
+                ret = bytes('当前访问的url不存在', encoding='utf-8')
             start_response(status, headers)
-            ret = bytes('当前访问的url不存在', encoding='utf-8')
             return [ret]
 
         
@@ -156,8 +182,12 @@ def start(host='127.0.0.1', port=8090):
     '''启动服务器
     '''
     app01 = Myapp01()
-    server = make_server('127.0.0.1', 8090, app01)
-    print('运行于127.0.0.1，端口为8090')
+    server = make_server(host, port, app01)
+    if setting.DEBUG == True:
+        style = 'debug'
+    else:
+        style = 'produce'
+    print('IP:%s --- 端口:%s --- 模式:%s'%(host, port, style))
     server.serve_forever()
 if __name__ == '__main__':
     start()

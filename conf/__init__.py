@@ -3,18 +3,16 @@ from . import global_settings
 import settings
 class SettingConf(object):
     def __init__(self):
-        self._settings={}
         for i in dir(global_settings):
             if i.isupper():
-                self._settings[i] = getattr(global_settings, i)
+                setattr(self, i, getattr(global_settings, i))
         for i in dir(settings):
             if i.isupper():
-                self._settings[i] = getattr(settings, i)
-
-    def __getitem__(self,key):
-        return self._settings.get(key)
-    def __setitem(self,key,value):
-        self._settings[key] = value
+                setattr(self, i,getattr(settings, i))
+    def __getitem__(self, item):
+        return getattr(self,item)
+    def __getattr__(self, item):
+        return None
 setting = SettingConf()
 
 MIDDLE_LIST= []

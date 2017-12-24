@@ -17,12 +17,14 @@ def signed_cookie(msg, salt):
     value = '%s|%s' %(msg, make_str(b64))
     return value
 
-def handle_cookies(cookies):
+def handle_cookies(cookies=None):
     dic={}
-    ls = cookies.split('; ')
+    if cookies  == None:
+        return dic
+    ls = cookies.split(';')
     for i in ls:
         key, value = i.split('=')
-        dic[key] = value
+        dic[key.strip()] = value.strip()
     return dic
 
 def parse_form_data(data):
